@@ -5,6 +5,8 @@ public class PlayerController : MonoBehaviour
 {
     public InputAction MoveAction;
     Rigidbody2D rigidbody2d;
+    Animator animator;
+    Vector2 moveDirection = new Vector2(1, 0);
 
     public int maxHealth = 5;
     public int health { get { return currentHealth; } } 
@@ -15,17 +17,32 @@ public class PlayerController : MonoBehaviour
     public float timeInvincible = 2.0f;
     bool isInvincible;
     float damageCooldown;
+    public GameObject projectilePrefab;
+    public InputAction LaunchAction;
 
     void Start()
     {
         MoveAction.Enable();
         rigidbody2d = GetComponent<Rigidbody2D>();
        currentHealth = maxHealth;
+        animator = GetComponent<Animator>();
+        LaunchAction.Enable();
+
     }
 
     void Update()
     {
         move = MoveAction.ReadValue<Vector2>();
+        if (!Mathf.Approximately(move.x, 0.0f)
+||      !Mathf.Approximately(move.y, 0.0f))
+        {
+            moveDirection.Set(move.x, move.y);
+            moveDirection.Normalize();
+        }
+        animator.SetFloat("Look X", moveDirection.x);
+        animator.SetFloat("Look Y", moveDirection.y);
+        animator.SetFloat("Speed", move.magnitude);
+
         // Debug.Log(move); 
         if (isInvincible)
         {
@@ -34,6 +51,10 @@ public class PlayerController : MonoBehaviour
             {
                 isInvincible = false;
             }
+        }
+        if (LaunchAction.WasPressedThisFrame())
+        {
+            Launch();
         }
     }
 
@@ -53,10 +74,20 @@ public class PlayerController : MonoBehaviour
             }
             isInvincible = true;
             damageCooldown = timeInvincible;
+            animator.SetTrigger("Hit");
         }
         currentHealth = Mathf.Clamp(currentHealth + amount,
         0, maxHealth);
         Debug.Log(currentHealth + "/" + maxHealth);
     }
-
+    void Launch()
+    {
+        GameObject projectileObject = Instantiate(projectilePrefab,
+        rigidbody2d.position + Vector2.up * 1.0f,
+        Quaternion.identity);
+        Projectile projectile =
+        projectileObject.GetComponent<Projectile>();
+        projectile.Launch(moveDirection, 300);
+        animator.SetTrigger("Launch");
+    }
 }
