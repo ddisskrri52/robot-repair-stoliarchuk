@@ -13,6 +13,7 @@ public class EnemyController : MonoBehaviour
 
     Animator animator;
     bool broken = true;
+    public bool isBroken { get { return broken; } }
 
     void Start()
     {

@@ -19,6 +19,9 @@ public class PlayerController : MonoBehaviour
     float damageCooldown;
     public GameObject projectilePrefab;
     public InputAction LaunchAction;
+    public InputAction TalkAction;
+    private NonPlayerCharacter lastNonPlayerCharacter;
+   
 
     void Start()
     {
@@ -27,6 +30,7 @@ public class PlayerController : MonoBehaviour
        currentHealth = maxHealth;
         animator = GetComponent<Animator>();
         LaunchAction.Enable();
+        TalkAction.Enable();
 
     }
 
@@ -56,6 +60,26 @@ public class PlayerController : MonoBehaviour
         {
             Launch();
         }
+
+        RaycastHit2D hit = Physics2D.Raycast(
+        rigidbody2d.position + Vector2.up * 0.2f,
+        moveDirection, 1.5f, LayerMask.GetMask("NPC"));
+        if (hit.collider != null)
+        {
+            NonPlayerCharacter npc =
+            hit.collider.GetComponent<NonPlayerCharacter>();
+            npc.dialogueBubble.SetActive(true);
+            lastNonPlayerCharacter = npc;
+            FindFriend();
+        }
+        else
+        {
+            if (lastNonPlayerCharacter != null)
+            {
+                lastNonPlayerCharacter.dialogueBubble.SetActive(false);
+                lastNonPlayerCharacter = null;
+            }
+        }
     }
 
     void FixedUpdate()
@@ -78,7 +102,7 @@ public class PlayerController : MonoBehaviour
         }
         currentHealth = Mathf.Clamp(currentHealth + amount,
         0, maxHealth);
-        Debug.Log(currentHealth + "/" + maxHealth);
+        UIHandler.instance.SetHealthValue(currentHealth / (float)maxHealth);
     }
     void Launch()
     {
@@ -90,4 +114,12 @@ public class PlayerController : MonoBehaviour
         projectile.Launch(moveDirection, 300);
         animator.SetTrigger("Launch");
     }
+    void FindFriend()
+    {
+        if (TalkAction.WasPressedThisFrame())
+        {
+            UIHandler.instance.DisplayDialogue();
+        }
+    }
 }
+    
